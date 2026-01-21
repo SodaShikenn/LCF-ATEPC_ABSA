@@ -5,6 +5,45 @@ from transformers import BertTokenizer
 import torch
 import random
 
+def get_ent_pos(lst):
+    items = []
+    for i in range(len(lst)):
+        # B-ASP 开头
+        if lst[i] == 1:
+            item = [i]
+            while True:
+                i += 1
+                # 到 I-ASP 结束
+                if i >= len(lst) or lst[i] != 2:
+                    items.append(item)
+                    break
+                else:
+                    item.append(i)
+        i += 1
+    return items
+
+# [CLS]这个手机外观时尚，美中不足的是拍照像素低。[SEP]
+# 0 0 0 0 0 1 2 0 0 0 0 0 0 0 0 0 1 2 2 2 0 0 0
+print(get_ent_pos([0,0,0,0,0,1,2,0,0,0,0,0,0,0,0,0,1,2,2,2,0,0,0]))
+# [[5, 6], [16, 17, 18, 19]]
+
+def get_ent_weight(max_len, ent_pos):
+    cdm = []
+    cdw = []
+
+    for i in range(max_len):
+        dst = min(abs(i - ent_pos[0]), abs(i - ent_pos[-1]))
+        if dst <= SRD:
+            cdm.append(1)
+            cdw.append(1)
+        else:
+            cdm.append(0)
+            cdw.append(1 / (dst - SRD + 1))
+    return cdm, cdw
+
+# print(get_ent_weight(23, [5,6]))
+# exit()
+
 class Dataset(data.Dataset):
     def __init__(self, type='train'):
         super().__init__()
