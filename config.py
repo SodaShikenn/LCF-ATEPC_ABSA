@@ -1,5 +1,10 @@
-TRAIN_FILE_PATH = './output/process/atepc.train.csv'
-TEST_FILE_PATH = './output/process/atepc.test.csv'
+import os
+
+# Base directory (parent of code folder)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+TRAIN_FILE_PATH = os.path.join(BASE_DIR, 'code/output/process/atepc.train.csv')
+TEST_FILE_PATH = os.path.join(BASE_DIR, 'code/output/process/atepc.test.csv')
 
 BIO_O_ID = 0
 BIO_B_ID = 1
@@ -12,7 +17,7 @@ POLA_MAP = ['Negative', 'Positive']
 POLA_DIM = 2
 
 BERT_PAD_ID = 0
-BERT_MODEL_NAME = '../huggingface/bert-base-chinese'
+BERT_MODEL_NAME = os.path.join(BASE_DIR, 'huggingface/bert-base-chinese')
 BERT_DIM = 768
 
 SRD = 3  # Semantic-Relative Distance
@@ -21,7 +26,7 @@ BATCH_SIZE = 50
 EPOCH = 100
 LR = 1e-4
 
-MODEL_DIR = './output/models/'
+MODEL_DIR = os.path.join(BASE_DIR, 'code/output/models/')
 
 import torch
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'

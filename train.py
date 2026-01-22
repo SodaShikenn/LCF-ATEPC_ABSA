@@ -37,40 +37,40 @@ if __name__ == '__main__':
             # if b % 10 == 0:
             print('>> epoch', e, 'batch:', b, 'loss:', loss.item())
 
-        #     # if b % 100 != 0:
-        #     #     continue
+            # if b % 100 != 0:
+            #     continue
 
-        #     # 计算准确率（实体和情感都判断正确才算对）
-        #     correct_cnt = pred_cnt = gold_cnt = 0
-        #     for i in range(len(input_ids)):
-        #         # 累加真实值数量
-        #         gold_cnt += len(pairs[i])
+            # 计算准确率（实体和情感都判断正确才算对）
+            correct_cnt = pred_cnt = gold_cnt = 0
+            for i in range(len(input_ids)):
+                # 累加真实值数量
+                gold_cnt += len(pairs[i])
 
-        #         # 根据预测的实体label，解析出实体位置，并预测情感分类
-        #         b_ent_pos, b_ent_pola = get_pola(model, input_ids[i], mask[i], pred_ent_label[i])
-        #         if not b_ent_pos:
-        #             continue
+                # 根据预测的实体label，解析出实体位置，并预测情感分类
+                b_ent_pos, b_ent_pola = get_pola(model, input_ids[i], mask[i], pred_ent_label[i])
+                if not b_ent_pos:
+                    continue
 
-        #         # 解析实体和情感，并和真实值对比
-        #         pred_pair = []
-        #         cnt = 0
-        #         for ent, pola in zip(b_ent_pos, torch.argmax(b_ent_pola, dim=1)):
-        #             pair_item = (ent, pola.item())
-        #             pred_pair.append(pair_item)
-        #             # 判断正确，正确数量加1
-        #             if pair_item in pairs[i]:
-        #                 cnt += 1
+                # 解析实体和情感，并和真实值对比
+                pred_pair = []
+                cnt = 0
+                for ent, pola in zip(b_ent_pos, torch.argmax(b_ent_pola, dim=1)):
+                    pair_item = (ent, pola.item())
+                    pred_pair.append(pair_item)
+                    # 判断正确，正确数量加1
+                    if pair_item in pairs[i]:
+                        cnt += 1
 
-        #         # 累加数值
-        #         correct_cnt += cnt
-        #         pred_cnt += len(pred_pair)
+                # 累加数值
+                correct_cnt += cnt
+                pred_cnt += len(pred_pair)
 
-        #     # 指标计算
-        #     precision = round(correct_cnt / (pred_cnt + EPS), 3)
-        #     recall = round(correct_cnt / (gold_cnt + EPS), 3)
-        #     f1_score = round(2 / (1 / (precision + EPS) + 1 / (recall + EPS)), 3)
-        #     print('\tcorrect_cnt:', correct_cnt, 'pred_cnt:', pred_cnt, 'gold_cnt:', gold_cnt)
-        #     print('\tprecision:', precision, 'recall:', recall, 'f1_score:', f1_score)
+            # 指标计算
+            precision = round(correct_cnt / (pred_cnt + EPS), 3)
+            recall = round(correct_cnt / (gold_cnt + EPS), 3)
+            f1_score = round(2 / (1 / (precision + EPS) + 1 / (recall + EPS)), 3)
+            print('\tcorrect_cnt:', correct_cnt, 'pred_cnt:', pred_cnt, 'gold_cnt:', gold_cnt)
+            print('\tprecision:', precision, 'recall:', recall, 'f1_score:', f1_score)
 
-        # # if e % 3 == 0:
-        # torch.save(model, MODEL_DIR + f'model_{e}.pth')
+        if e % 10 == 0:
+            torch.save(model, MODEL_DIR + f'model_{e}.pth')

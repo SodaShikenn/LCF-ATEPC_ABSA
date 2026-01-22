@@ -145,37 +145,36 @@ class Dataset(data.Dataset):
             batch_pairs,
         )
 
+def get_pola(model, input_ids, mask, ent_label):
+    # 变量初始化
+    b_input_ids = []
+    b_mask = []
+    b_ent_cdm = []
+    b_ent_cdw = []
+    b_ent_pos = []
 
-    def get_pola(model, input_ids, mask, ent_label):
-        # 变量初始化
-        b_input_ids = []
-        b_mask = []
-        b_ent_cdm = []
-        b_ent_cdw = []
-        b_ent_pos = []
+    # 根据label解析实体位置
+    ent_pos = get_ent_pos(ent_label)
+    n = len(ent_pos)
+    if n == 0:
+        return None, None
 
-        # 根据label解析实体位置
-        ent_pos = get_ent_pos(ent_label)
-        n = len(ent_pos)
-        if n == 0:
-            return None, None
-
-        # n个实体一起预测，同一个句子复制n份，作为一个batch
-        b_input_ids.extend([input_ids] * n)
-        b_mask.extend([mask] * n)
-        b_ent_pos.extend(ent_pos)
-        for sg_ent_pos in ent_pos:
-            cdm, cdw = get_ent_weight(len(input_ids), sg_ent_pos)
-            b_ent_cdm.append(cdm)
-            b_ent_cdw.append(cdw)
-        
-        # 列表转tensor
-        b_input_ids = torch.stack(b_input_ids, dim=0).to(DEVICE)
-        b_mask = torch.stack(b_mask, dim=0).to(DEVICE)
-        b_ent_cdm = torch.tensor(b_ent_cdm).to(DEVICE)
-        b_ent_cdw = torch.tensor(b_ent_cdw).to(DEVICE)
-        b_ent_pola = model.get_pola(b_input_ids, b_mask, b_ent_cdm, b_ent_cdw)
-        return b_ent_pos, b_ent_pola
+    # n个实体一起预测，同一个句子复制n份，作为一个batch
+    b_input_ids.extend([input_ids] * n)
+    b_mask.extend([mask] * n)
+    b_ent_pos.extend(ent_pos)
+    for sg_ent_pos in ent_pos:
+        cdm, cdw = get_ent_weight(len(input_ids), sg_ent_pos)
+        b_ent_cdm.append(cdm)
+        b_ent_cdw.append(cdw)
+    
+    # 列表转tensor
+    b_input_ids = torch.stack(b_input_ids, dim=0).to(DEVICE)
+    b_mask = torch.stack(b_mask, dim=0).to(DEVICE)
+    b_ent_cdm = torch.tensor(b_ent_cdm).to(DEVICE)
+    b_ent_cdw = torch.tensor(b_ent_cdw).to(DEVICE)
+    b_ent_pola = model.get_pola(b_input_ids, b_mask, b_ent_cdm, b_ent_cdw)
+    return b_ent_pos, b_ent_pola
 
 if __name__ == '__main__':
     dataset = Dataset()
