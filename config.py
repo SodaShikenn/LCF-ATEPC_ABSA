@@ -17,14 +17,14 @@ BERT_DIM = 768
 
 SRD = 3  # Semantic-Relative Distance
 
-# BATCH_SIZE = 50
-# EPOCH = 100
-# LR = 1e-4
+BATCH_SIZE = 50
+EPOCH = 100
+LR = 1e-4
 
-# MODEL_DIR = './output/models/'
+MODEL_DIR = './output/models/'
 
-# # import torch
-# # DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+import torch
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# EPS = 1e-10
-# LCF = 'cdw' # cdw cdm fusion
+EPS = 1e-10
+LCF = 'cdw' # cdw cdm fusion
