@@ -1,10 +1,21 @@
-# LCF-ATEPC
+# LCF-ATEPC-ABSA
 
-Aspect Term Extraction and Polarity Classification using BERT with Local Context Focus mechanism.
+A BERT-based model for **Aspect-Based Sentiment Analysis (ABSA)**.
 
-## Overview
+## What is this?
 
-Extracts product aspects from reviews and classifies their sentiment polarity.
+This project performs two tasks simultaneously:
+
+1. **Aspect Term Extraction (ATE)**: Identifies product attributes mentioned in reviews (e.g., "design", "camera")
+2. **Polarity Classification (PC)**: Determines the sentiment for each aspect (Positive/Negative)
+
+Together, this is called **ATEPC** (Aspect Term Extraction and Polarity Classification).
+
+### Key Technique: LCF (Local Context Focus)
+
+Instead of analyzing the entire sentence equally, **LCF** focuses on words near each aspect term. This improves accuracy by reducing noise from irrelevant context.
+
+### Example
 
 ```
 Input:  "This phone has stylish design, but the camera is disappointing."
@@ -128,3 +139,4 @@ Metrics: Precision, Recall, F1-Score
 - BERT: Devlin et al.
 - LCF-ATEPC: Zeng et al.
 - CRF: Lafferty et al.
+- [BERTベース多言語感情分析モデル: LCF-ATEPC (Qiita)](https://qiita.com/donaldchi/items/76a107fb4493490afa9e)

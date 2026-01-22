@@ -1,10 +1,21 @@
-# LCF-ATEPC
+# LCF-ATEPC-ABSA
 
-BERTベースのLocal Context Focus機構を用いたアスペクト抽出・極性分類モデル
+BERTベースの**アスペクト感情分析 (ABSA: Aspect-Based Sentiment Analysis)** モデル
 
-## 概要
+## これは何？
 
-レビューから製品アスペクトを抽出し、感情極性を分類します。
+このプロジェクトは2つのタスクを同時に実行します：
+
+1. **アスペクト抽出 (ATE: Aspect Term Extraction)**: レビュー中の製品属性を特定（例：「デザイン」「カメラ」）
+2. **極性分類 (PC: Polarity Classification)**: 各アスペクトの感情を判定（ポジティブ/ネガティブ）
+
+この2つを合わせて **ATEPC** (Aspect Term Extraction and Polarity Classification) と呼びます。
+
+### 主要技術: LCF (Local Context Focus)
+
+文全体を均等に分析するのではなく、**LCF**は各アスペクト周辺の単語に注目します。これにより、無関係な文脈からのノイズを減らし、精度を向上させます。
+
+### 例
 
 ```
 入力: "このスマホはデザインがおしゃれだが、カメラは残念だ。"
@@ -128,3 +139,4 @@ python predict.py
 - BERT: Devlin et al.
 - LCF-ATEPC: Zeng et al.
 - CRF: Lafferty et al.
+- [BERTベース多言語感情分析モデル: LCF-ATEPC (Qiita)](https://qiita.com/donaldchi/items/76a107fb4493490afa9e)
