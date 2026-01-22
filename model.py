@@ -10,6 +10,7 @@ from transformers import logging
 logging.set_verbosity_error()
 
 config = BertConfig.from_pretrained(BERT_MODEL_NAME)
+config._attn_implementation = "eager"
 
 
 class Model(nn.Module):
@@ -21,12 +22,12 @@ class Model(nn.Module):
             param.requires_grad = False
         self.ent_linear = nn.Linear(BERT_DIM, ENT_SIZE)
         self.crf = CRF(ENT_SIZE, batch_first=True)
-        # self.pola_linear2 = nn.Linear(BERT_DIM * 2, BERT_DIM)
-        # self.pola_linear3 = nn.Linear(BERT_DIM * 3, BERT_DIM)
-        # self.pola_linear = nn.Linear(BERT_DIM, POLA_DIM)
-        # self.attention = BertAttention(config)
-        # self.pooler = BertPooler(config)
-        # self.dropout = nn.Dropout()
+        self.pola_linear2 = nn.Linear(BERT_DIM * 2, BERT_DIM)
+        self.pola_linear3 = nn.Linear(BERT_DIM * 3, BERT_DIM)
+        self.pola_linear = nn.Linear(BERT_DIM, POLA_DIM)
+        self.attention = BertAttention(config)
+        self.pooler = BertPooler(config)
+        self.dropout = nn.Dropout()
 
     def get_text_encoded(self, input_ids, mask):
         return self.bert(input_ids, attention_mask=mask)[0]
@@ -43,33 +44,37 @@ class Model(nn.Module):
         pred_ent_label = self.get_entity_crf(entity_fc, mask)
         return pred_ent_label
 
-    # def get_pola(self, input_ids, mask, ent_cdm, ent_cdw):
-    #     text_encoded = self.get_text_encoded(input_ids, mask)
+    def get_pola(self, input_ids, mask, ent_cdm, ent_cdw):
+        text_encoded = self.get_text_encoded(input_ids, mask)
 
-    #     # shape [b, c] -> [b, c, 768]
-    #     ent_cdm_weight = ent_cdm.unsqueeze(-1).repeat(1, 1, BERT_DIM)
-    #     ent_cdw_weight = ent_cdw.unsqueeze(-1).repeat(1, 1, BERT_DIM)
-    #     cdm_feature = torch.mul(text_encoded, ent_cdm_weight)
-    #     cdw_feature = torch.mul(text_encoded, ent_cdw_weight)
+        # shape [b, c] -> [b, c, 768]
+        ent_cdm_weight = ent_cdm.unsqueeze(-1).repeat(1, 1, BERT_DIM)
+        ent_cdw_weight = ent_cdw.unsqueeze(-1).repeat(1, 1, BERT_DIM)
+        cdm_feature = torch.mul(text_encoded, ent_cdm_weight)
+        cdw_feature = torch.mul(text_encoded, ent_cdw_weight)
 
-    #     # 根据配置，使用不同的策略，重新组合特征，在降维到768维
-    #     if LCF == 'fusion':
-    #         out = torch.cat([text_encoded, cdm_feature, cdw_feature], dim=-1)
-    #         out = self.pola_linear3(out)
-    #     if LCF == 'fusion2':
-    #         out = torch.cat([text_encoded, cdw_feature], dim=-1)
-    #         out = self.pola_linear2(out)
-    #     elif LCF == 'cdw':
-    #         out = cdw_feature
+        # 根据配置，使用不同的策略，重新组合特征，在降维到768维
+        if LCF == 'fusion':
+            out = torch.cat([text_encoded, cdm_feature, cdw_feature], dim=-1)
+            out = self.pola_linear3(out)
+        if LCF == 'fusion2':
+            out = torch.cat([text_encoded, cdw_feature], dim=-1)
+            out = self.pola_linear2(out)
+        elif LCF == 'cdw':
+            out = cdw_feature
 
-    #     # self-attension 结合上下文信息，增强语义
-    #     out = self.attention(out, None)
-    #     # pooler 取[CLS]标记位，作为整个句子的特征
-    #     out = torch.sigmoid(self.pooler(torch.tanh(out[0])))
-    #     return self.pola_linear(out)
+        # self-attension 结合上下文信息，增强语义
+        out = self.attention(out, None)
+        # pooler 取[CLS]标记位，作为整个句子的特征
+        out = torch.sigmoid(self.pooler(torch.tanh(out[0])))
+        return self.pola_linear(out)
+
 
 if __name__ == '__main__':
     input_ids = torch.randint(0, 3000, (2, 30)).to(DEVICE)
     mask = torch.ones((2, 30)).bool().to(DEVICE)
     model = Model().to(DEVICE)
-    print(model.get_entity(input_ids, mask))
+    # print(model.get_entity(input_ids, mask))
+    ent_cdm = torch.rand((2, 30)).to(DEVICE)
+    ent_cdw = torch.rand((2, 30)).to(DEVICE)
+    print(model.get_pola(input_ids, mask, ent_cdm, ent_cdw))
