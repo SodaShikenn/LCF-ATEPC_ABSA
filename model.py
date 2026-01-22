@@ -69,6 +69,18 @@ class Model(nn.Module):
         out = torch.sigmoid(self.pooler(torch.tanh(out[0])))
         return self.pola_linear(out)
 
+    def ent_loss_fn(self, input_ids, ent_label, mask):
+        text_encoded = self.get_text_encoded(input_ids, mask)
+        entity_fc = self.get_entity_fc(text_encoded)
+        return -self.crf.forward(entity_fc, ent_label, mask, reduction='mean')
+
+    def pola_loss_fn(self, pred_pola, pola_label):
+        return F.cross_entropy(pred_pola, pola_label)
+
+    def loss_fn(self, input_ids, ent_label, mask, pred_pola, pola_label):
+        return self.ent_loss_fn(input_ids, ent_label, mask) + \
+        self.pola_loss_fn(pred_pola, pola_label)
+
 
 if __name__ == '__main__':
     input_ids = torch.randint(0, 3000, (2, 30)).to(DEVICE)
