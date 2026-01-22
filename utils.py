@@ -8,12 +8,12 @@ import random
 def get_ent_pos(lst):
     items = []
     for i in range(len(lst)):
-        # B-ASP 开头
+        # B-ASP tag starts
         if lst[i] == 1:
             item = [i]
             while True:
                 i += 1
-                # 到 I-ASP 结束
+                # Until I-ASP ends
                 if i >= len(lst) or lst[i] != 2:
                     items.append(item)
                     break
@@ -35,7 +35,7 @@ def get_ent_pos(lst):
 #             cdm.append(0)
 #             cdw.append(1 / (dst - SRD + 1))
 #     return cdm, cdw
-# [CLS]这个手机外观时尚，美中不足的是拍照像素低。[SEP]
+# Example: [CLS]This phone has stylish appearance, but the camera pixels are low.[SEP]
 # 0 0 0 0 0 1 2 0 0 0 0 0 0 0 0 0 1 2 2 2 0 0 0
 # print(get_ent_pos([0,0,0,0,0,1,2,0,0,0,0,0,0,0,0,0,1,2,2,2,0,0,0]))
 # [[5, 6], [16, 17, 18, 19]]
@@ -68,32 +68,32 @@ class Dataset(data.Dataset):
         return len(self.df) - 1
 
     def __getitem__(self, index):
-        # 相邻两个句子拼接
+        # Concatenate two adjacent sentences
         text1, bio1, pola1 = self.df.loc[index]
         text2, bio2, pola2 = self.df.loc[index+1]
         text = text1 + ' ; ' + text2
         bio = bio1 + ' O ' + bio2
         pola = pola1 + ' -1 ' + pola2
 
-        # 按自己的规则分词
+        # Tokenize with custom rules
         tokens = ['[CLS]'] + text.split(' ') + ['[SEP]']
         input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
         
-        # BIO标签转id
+        # Convert BIO tags to IDs
         bio_arr = ['O'] + bio.split(' ') + ['O']
         bio_label = [BIO_MAP[l] for l in bio_arr]
         
-        # 情感值转数字
+        # Convert polarity to numbers
         pola_arr = ['-1'] + pola.split(' ') + ['-1']
         pola_label = list(map(int, pola_arr))
         return input_ids, bio_label, pola_label
     
     def collate_fn(self, batch):
-        # 统计最大句子长度
+        # Get max sentence length
         batch.sort(key=lambda x: len(x[0]), reverse=True)
         max_len = len(batch[0][0])
         
-        # 变量初始化
+        # Initialize variables
         batch_input_ids = []
         batch_bio_label = []
         batch_mask = []
@@ -103,34 +103,34 @@ class Dataset(data.Dataset):
         batch_pairs = [] 
 
         for input_ids, bio_label, pola_label in batch:
-            # 获取实体位置，没有实体跳过
+            # Get entity positions, skip if no entity
             ent_pos = get_ent_pos(bio_label)
             if len(ent_pos) == 0:
                 continue
 
-            # 填充句子长度
+            # Pad sentence length
             pad_len = max_len - len(input_ids)
             batch_input_ids.append(input_ids + [BERT_PAD_ID] * pad_len)
             batch_mask.append([1] * len(input_ids) + [0] * pad_len)
             batch_bio_label.append(bio_label + [BIO_O_ID] * pad_len)
 
-            # 实体和情感分类对应
+            # Entity and sentiment mapping
             pairs = []
             for pos in ent_pos:
                 pola = pola_label[pos[0]]
-                # 异常值替换
+                # Replace invalid values
                 pola = 0 if pola == -1 else pola
                 pairs.append((pos, pola))
             batch_pairs.append(pairs)
 
-            # 随机取一个实体
+            # Randomly select one entity
             sg_ent_pos = random.choice(ent_pos)
             cdm, cdw = get_ent_weight(max_len, sg_ent_pos)
             
-            # 计算加权参数
+            # Calculate weight parameters
             batch_ent_cdm.append(cdm)
             batch_ent_cdw.append(cdw)
-            # 实体第一个字的情感极性
+            # Polarity of the first token of entity
             pola = pola_label[sg_ent_pos[0]]
             pola = 0 if pola == -1 else pola
             batch_pola_label.append(pola)
@@ -146,20 +146,20 @@ class Dataset(data.Dataset):
         )
 
 def get_pola(model, input_ids, mask, ent_label):
-    # 变量初始化
+    # Initialize variables
     b_input_ids = []
     b_mask = []
     b_ent_cdm = []
     b_ent_cdw = []
     b_ent_pos = []
 
-    # 根据label解析实体位置
+    # Parse entity positions from label
     ent_pos = get_ent_pos(ent_label)
     n = len(ent_pos)
     if n == 0:
         return None, None
 
-    # n个实体一起预测，同一个句子复制n份，作为一个batch
+    # Predict n entities together, duplicate the same sentence n times as a batch
     b_input_ids.extend([input_ids] * n)
     b_mask.extend([mask] * n)
     b_ent_pos.extend(ent_pos)
@@ -168,7 +168,7 @@ def get_pola(model, input_ids, mask, ent_label):
         b_ent_cdm.append(cdm)
         b_ent_cdw.append(cdw)
     
-    # 列表转tensor
+    # Convert list to tensor
     b_input_ids = torch.stack(b_input_ids, dim=0).to(DEVICE)
     b_mask = torch.stack(b_mask, dim=0).to(DEVICE)
     b_ent_cdm = torch.tensor(b_ent_cdm).to(DEVICE)

@@ -17,9 +17,9 @@ class Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.bert = BertModel.from_pretrained(BERT_MODEL_NAME)
-        # 冻结Bert参数，只训练下游模型
-        for name, param in self.bert.named_parameters():
-            param.requires_grad = False
+        # # Freeze BERT parameters, only train downstream model
+        # for name, param in self.bert.named_parameters():
+        #     param.requires_grad = False
         self.ent_linear = nn.Linear(BERT_DIM, ENT_SIZE)
         self.crf = CRF(ENT_SIZE, batch_first=True)
         self.pola_linear2 = nn.Linear(BERT_DIM * 2, BERT_DIM)
@@ -53,7 +53,7 @@ class Model(nn.Module):
         cdm_feature = torch.mul(text_encoded, ent_cdm_weight)
         cdw_feature = torch.mul(text_encoded, ent_cdw_weight)
 
-        # 根据配置，使用不同的策略，重新组合特征，在降维到768维
+        # Based on config, use different strategies to recombine features and reduce to 768 dimensions
         if LCF == 'fusion':
             out = torch.cat([text_encoded, cdm_feature, cdw_feature], dim=-1)
             out = self.pola_linear3(out)
@@ -63,9 +63,9 @@ class Model(nn.Module):
         elif LCF == 'cdw':
             out = cdw_feature
 
-        # self-attension 结合上下文信息，增强语义
+        # Self-attention to combine context information and enhance semantics
         out = self.attention(out, None)
-        # pooler 取[CLS]标记位，作为整个句子的特征
+        # Pooler takes [CLS] token position as the whole sentence feature
         out = torch.sigmoid(self.pooler(torch.tanh(out[0])))
         return self.pola_linear(out)
 

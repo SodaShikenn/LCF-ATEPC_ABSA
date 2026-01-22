@@ -7,16 +7,16 @@ def format_sample(file_paths, output_path):
     for file_path in file_paths:
         with open(file_path) as f:
             for line in f.readlines():
-                # 单独的空行，表示句子间隔
+                # Empty line indicates sentence boundary
                 if line == '\n':
                     items.append({'text': text.strip(), 'bio': bio.strip(), 'pola': pola.strip()})
                     text = bio = pola = ''
                     continue
-                # 文本、bio标记、情感极性
+                # Text, BIO tag, sentiment polarity
                 t, b, p = line.split(' ')
                 text += t + ' '
                 bio += b + ' '
-                # 情感极性修正，2表示好评，改为1
+                # Polarity correction: 2 means positive, change to 1
                 p = str(1) if p.strip() == str(2) else p.strip()
                 pola += p + ' '
     df = pd.DataFrame(items)
@@ -27,7 +27,7 @@ def check_label():
     dct = {}
     for index, row in df.iterrows():
         for b, p in zip(row['bio'].split(), row['pola'].split()):
-            # 删除异常值
+            # Remove invalid values
             if b == 'B-ASP' and p == '-1':
                 print(index, row)
                 df.drop(index=index, inplace=True)
@@ -52,7 +52,7 @@ def check_label():
 #     dct = {}
 #     for index, row in df.iterrows():
 #         for b, p in zip(row['bio'].split(), row['pola'].split()):
-#             # 删除异常值
+#             # Remove invalid values
 #             if b == 'B-ASP' and p == '-1':
 #                 print(index, row)
 #                 df.drop(index=index, inplace=True)
